@@ -60,9 +60,9 @@ Strategies are first prototyped in Pine Script for fast visual iteration and bui
 
 ![TradingView Pine Script strategy](./screenshots/pinescript-strategy.png)
 
----
-
 ## Project Structure
+
+```
 crypto-bot/
 ├── bots/           # Live paper-trading bots (run on VPS)
 ├── backtest/       # Historical backtesting scripts
@@ -71,7 +71,7 @@ crypto-bot/
 ├── .env            # Telegram credentials (git-ignored)
 ├── requirements.txt
 └── README.md
----
+```
 
 ## Setup
 
