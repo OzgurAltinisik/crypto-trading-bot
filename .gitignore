@@ -1,0 +1,18 @@
+# Ortam değişkenleri (token, şifreler)
+.env
+
+# Veritabanı
+data/trades.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# VS Code
+.vscode/
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
