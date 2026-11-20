@@ -1,0 +1,20 @@
+# HTTPS is automatic: Caddy gets and renews a Let's Encrypt certificate for $DOMAIN.
+# DOMAIN can be your own domain (panel.example.com) or, without one,
+# <server-ip>.sslip.io (e.g. 203.0.113.10.sslip.io).
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# hashed build assets never change
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	reverse_proxy web:8000
+}

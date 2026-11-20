@@ -1,0 +1,81 @@
+# Walk-forward experiments:  python -m cryptobot optimize <name>
+# Each test window is traded with the parameters that scored best on the
+# preceding train window only. `grid` keys are searched; `base` is fixed.
+defaults: &defaults
+  start: 2019-06-01        # first train window starts here (earlier data = indicator warm-up)
+  train_months: 24
+  test_months: 6
+  min_trades: 8            # per train window; fewer = parameter set ignored
+
+donchian_grid: &donchian_grid
+  entry_period: [20, 55, 100]
+  exit_period: [10, 20, 50]
+  trend: [null, 200]
+  adx_min: [null, 20]
+  stop_value: [2.0, 3.0]
+  trail_atr: [null, 3.0, 5.0]
+
+experiments:
+  ema_atr_btc_1h:
+    <<: *defaults
+    symbol: BTC/USDT
+    timeframe: 1h
+    strategy: ema_cross
+    base: {trend: 200, rsi_buy_max: 60, rsi_sell_min: 40, stop_type: atr, stop_value: 2.0}
+    grid:
+      fast: [9, 20]
+      slow: [21, 50]
+      adx_min: [null, 20, 25]
+      take_profit_atr: [5.0, null]
+      trail_atr: [null, 3.0]
+
+  ema_atr_eth_1h:
+    <<: *defaults
+    symbol: ETH/USDT
+    timeframe: 1h
+    strategy: ema_cross
+    base: {trend: 200, rsi_buy_max: 60, rsi_sell_min: 40, stop_type: atr, stop_value: 2.0}
+    grid:
+      fast: [9, 20]
+      slow: [21, 50]
+      adx_min: [null, 20, 25]
+      take_profit_atr: [5.0, null]
+      trail_atr: [null, 3.0]
+
+  ema_trend_btc_4h:
+    <<: *defaults
+    symbol: BTC/USDT
+    timeframe: 4h
+    strategy: ema_cross
+    base: {stop_type: atr}
+    grid:
+      fast: [20, 50]
+      slow: [100, 200]
+      adx_min: [null, 20]
+      stop_value: [3.0, 5.0]
+      trail_atr: [null, 4.0, 6.0]
+
+  donchian_btc_4h:
+    <<: *defaults
+    symbol: BTC/USDT
+    timeframe: 4h
+    strategy: donchian
+    base: {stop_type: atr}
+    grid: *donchian_grid
+
+  donchian_eth_4h:
+    <<: *defaults
+    symbol: ETH/USDT
+    timeframe: 4h
+    strategy: donchian
+    base: {stop_type: atr}
+    grid: *donchian_grid
+
+  donchian_sol_4h:
+    <<: *defaults
+    start: 2021-01-01
+    symbol: SOL/USDT
+    timeframe: 4h
+    strategy: donchian
+    base: {stop_type: atr}
+    grid: *donchian_grid

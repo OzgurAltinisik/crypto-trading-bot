@@ -1,0 +1,94 @@
+# All bots run in one process: python -m cryptobot run
+# Backtest any of them:        python -m cryptobot backtest <id>
+# Search parameters:           python -m cryptobot optimize <experiment>  (config/optimize.yaml)
+exchange: binance          # public market data only, no API key
+db_path: data/bot.db
+cache_dir: data/cache      # backtest candle cache
+log_dir: data/logs
+tick_seconds: 30           # how often open positions are checked against stop / target
+
+defaults:
+  initial_balance: 10000   # paper balance in USDT
+  fee: 0.001               # 0.1% per side
+  # Position sizing: lose at most this fraction of the balance if the initial
+  # stop is hit. 0.015 = 1.5%. The position size follows from the stop
+  # distance (wide stop -> smaller position). null = whole balance per trade.
+  # Drawdown scales roughly linearly with this number (see README).
+  risk_per_trade: 0.015
+  max_position: 1.0        # never more than 100% of the balance (no leverage)
+
+# Donchian breakout parameters shared by BTC/ETH/SOL. Picked because the
+# whole neighbourhood around them works on all three coins (not a single
+# lucky combination) and walk-forward tests stayed positive out of sample.
+donchian_params: &donchian
+  entry_period: 55         # buy on a close above the highest high of the last 55 bars (~9 days)
+  exit_period: 50          # sell on a close below the lowest low of the last 50 bars
+  trend: 200               # ...only while price is above EMA200
+  stop_type: atr
+  stop_value: 2.0          # initial stop: entry - 2×ATR
+
+bots:
+  - id: btc_donchian_4h
+    symbol: BTC/USDT
+    timeframe: 4h
+    strategy: donchian
+    params: *donchian
+
+  - id: eth_donchian_4h
+    symbol: ETH/USDT
+    timeframe: 4h
+    strategy: donchian
+    params: *donchian
+
+  - id: sol_donchian_4h      # weakest of the three since 2025: watch it
+    symbol: SOL/USDT
+    timeframe: 4h
+    risk_per_trade: 0.01     # smaller bets while its recent edge is weak
+    strategy: donchian
+    params: *donchian
+
+  # Baseline kept for comparison (whole balance per trade, like v1).
+  - id: btc_ema50_200
+    symbol: BTC/USDT
+    timeframe: 4h
+    risk_per_trade: null
+    strategy: ema_cross
+    params:
+      fast: 50
+      slow: 200
+      rsi_buy_max: 70
+      stop_type: pct
+      stop_value: 0.08
+
+  # v1 strategies: lost money out of sample (walk-forward -31% BTC, -34% ETH). Disabled.
+  - id: btc_ema9_21_atr
+    enabled: false
+    symbol: BTC/USDT
+    timeframe: 1h
+    strategy: ema_cross
+    params:
+      fast: 9
+      slow: 21
+      trend: 200
+      trend_slope_lookback: 10
+      rsi_buy_max: 60
+      rsi_sell_min: 40
+      stop_type: atr
+      stop_value: 2.0
+      take_profit_atr: 5.0
+      breakeven_at: 0.5
+
+  - id: eth_ema9_21_atr
+    enabled: false
+    symbol: ETH/USDT
+    timeframe: 1h
+    strategy: ema_cross
+    params:
+      fast: 9
+      slow: 21
+      trend: 200
+      rsi_buy_max: 60
+      rsi_sell_min: 40
+      stop_type: atr
+      stop_value: 2.0
+      take_profit_atr: 5.0

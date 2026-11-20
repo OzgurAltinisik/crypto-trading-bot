@@ -1,0 +1,5 @@
+# development: tests and backtest charts
+-r requirements.txt
+matplotlib>=3.9
+pytest>=8.0
+httpx>=0.27

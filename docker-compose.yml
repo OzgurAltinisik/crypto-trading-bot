@@ -1,0 +1,56 @@
+# Production stack:
+#   engine  - paper-trading engine (+ Telegram commands)
+#   web     - FastAPI dashboard, only reachable through caddy
+#   caddy   - HTTPS reverse proxy; gets a Let's Encrypt certificate for $DOMAIN
+#
+#   cp .env.example .env   # fill it in
+#   docker compose up -d --build
+#   docker compose logs -f engine
+
+x-app: &app
+  build: .
+  image: cryptobot:local
+  env_file: .env
+  volumes:
+    - ./data:/app/data           # bot.db, candle cache, logs, backups
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  engine:
+    <<: *app
+    command: ["python", "-m", "cryptobot", "run"]
+
+  web:
+    <<: *app
+    command: ["python", "-m", "cryptobot", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      FORWARDED_ALLOW_IPS: "*"   # trust X-Forwarded-* from caddy (web is not published)
+    expose: ["8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+    depends_on: [engine]
+
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  caddy_data:
+  caddy_config:
